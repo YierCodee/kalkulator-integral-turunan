@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Kalkulator ilmiah untuk menghitung turunan, integral, dan grafik fungsi.">
+  <title>Kalkulus — Kalkulator Ilmiah</title>
+
+  <script>
+    try {
+      var savedTheme = localStorage.getItem('kalkulus-theme');
+      var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.theme = savedTheme || preferred;
+    } catch (error) { /* tema tetap terang */ }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..800;1,9..144,300..800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <div class="app">
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">&int;</span>
+        <div class="brand-text">
+          <h1>Kalkulus</h1>
+          <p>Scientific notebook &middot; turunan &amp; integral</p>
+        </div>
+      </div>
+
+      <div class="masthead-tools">
+        <span class="status-chip" id="statusChip" data-state="idle">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="statusText">siap</span>
+        </span>
+        <button class="theme-btn" id="themeToggle" type="button" aria-label="Ganti tema">
+          <span class="theme-glyph" aria-hidden="true">&#9686;</span>
+          <span id="themeLabel">Gelap</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <section class="panel input-panel" aria-label="Panel perhitungan">
+        <div class="mode-tabs" role="tablist" aria-label="Mode perhitungan">
+          <button class="mode-tab" type="button" role="tab" id="tab-calc" data-mode="calc" aria-selected="false" tabindex="-1">
+            <span class="tab-index">01</span>
+            <span class="tab-label">Kalkulator</span>
+          </button>
+          <button class="mode-tab" type="button" role="tab" id="tab-deriv" data-mode="deriv" aria-selected="true" tabindex="0">
+            <span class="tab-index">02</span>
+            <span class="tab-label">Turunan</span>
+          </button>
+          <button class="mode-tab" type="button" role="tab" id="tab-integral" data-mode="integral" aria-selected="false" tabindex="-1">
+            <span class="tab-index">03</span>
+            <span class="tab-label">Integral</span>
+          </button>
+        </div>
+
+        <form id="calcForm" class="calc-form" role="tabpanel" aria-labelledby="tab-deriv" novalidate>
+          <div class="expr-head">
+            <label for="expression">Ekspresi</label>
+            <span class="expr-meta" id="exprMeta">radian</span>
+          </div>
+
+          <div class="expr-field" id="exprField">
+            <span class="expr-prefix" id="exprPrefix">f(x) =</span>
+            <input
+              id="expression"
+              name="expression"
+              type="text"
+              inputmode="text"
+              spellcheck="false"
+              autocomplete="off"
+              autocapitalize="off"
+              placeholder="x^3 - 2x + 1"
+              value="x^3 - 2x + 1"
+              aria-describedby="exprHint">
+            <button class="inline-clear" id="clearBtn" type="button" aria-label="Hapus ekspresi" title="Hapus">&times;</button>
+          </div>
+
+          <p class="field-hint" id="exprHint">
+            Gunakan <code>x</code>, <code>pi</code>, <code>e</code>. Fungsi: <code>sin</code>, <code>cos</code>, <code>ln</code>, <code>log</code>, <code>sqrt</code>.
+          </p>
+
+          <div class="example-row" id="exampleRow" aria-label="Contoh ekspresi"></div>
+
+          <div class="mode-fields" id="derivFields">
+            <label class="line-field" for="derivPoint">
+              <span>Evaluasi f&prime;(x) di x =</span>
+              <input id="derivPoint" type="text" spellcheck="false" autocomplete="off" placeholder="opsional, mis. 1 atau pi/2">
+            </label>
+            <p class="micro-note">Kosongkan untuk melihat turunan simbolik saja.</p>
+          </div>
+
+          <div class="mode-fields" id="integralFields" hidden>
+            <div class="bound-grid">
+              <label class="line-field" for="integralA">
+                <span>Batas bawah</span>
+                <input id="integralA" type="text" spellcheck="false" autocomplete="off" value="0">
+              </label>
+              <label class="line-field" for="integralB">
+                <span>Batas atas</span>
+                <input id="integralB" type="text" spellcheck="false" autocomplete="off" value="pi">
+              </label>
+            </div>
+            <p class="micro-note">Batas menerima angka atau ekspresi seperti <code>pi/2</code>.</p>
+          </div>
+
+          <div class="insert-bar" id="insertBar" aria-label="Sisipkan fungsi">
+            <button type="button" data-insert="sin()" data-caret="-1">sin</button>
+            <button type="button" data-insert="cos()" data-caret="-1">cos</button>
+            <button type="button" data-insert="tan()" data-caret="-1">tan</button>
+            <button type="button" data-insert="ln()" data-caret="-1">ln</button>
+            <button type="button" data-insert="log()" data-caret="-1">log</button>
+            <button type="button" data-insert="sqrt()" data-caret="-1">&radic;</button>
+            <button type="button" data-insert="^">x<sup>y</sup></button>
+            <button type="button" data-insert="!">!</button>
+            <button type="button" data-insert="pi">&pi;</button>
+            <button type="button" data-insert="e">e</button>
+            <button type="button" data-insert="x">x</button>
+          </div>
+
+          <div class="keypad" id="keypad" aria-label="Tombol kalkulator" hidden>
+            <button type="button" data-insert="sin()" data-caret="-1">sin</button>
+            <button type="button" data-insert="cos()" data-caret="-1">cos</button>
+            <button type="button" data-insert="tan()" data-caret="-1">tan</button>
+            <button type="button" data-insert="^" class="key-op">x<sup>y</sup></button>
+
+            <button type="button" data-insert="ln()" data-caret="-1">ln</button>
+            <button type="button" data-insert="log()" data-caret="-1">log</button>
+            <button type="button" data-insert="sqrt()" data-caret="-1">&radic;</button>
+            <button type="button" data-insert="!" class="key-op">n!</button>
+
+            <button type="button" data-insert="7">7</button>
+            <button type="button" data-insert="8">8</button>
+            <button type="button" data-insert="9">9</button>
+            <button type="button" data-insert="/" class="key-op">&divide;</button>
+
+            <button type="button" data-insert="4">4</button>
+            <button type="button" data-insert="5">5</button>
+            <button type="button" data-insert="6">6</button>
+            <button type="button" data-insert="*" class="key-op">&times;</button>
+
+            <button type="button" data-insert="1">1</button>
+            <button type="button" data-insert="2">2</button>
+            <button type="button" data-insert="3">3</button>
+            <button type="button" data-insert="-" class="key-op">&minus;</button>
+
+            <button type="button" data-insert="0">0</button>
+            <button type="button" data-insert=".">.</button>
+            <button type="button" data-insert="pi">&pi;</button>
+            <button type="button" data-insert="+" class="key-op">+</button>
+
+            <button type="button" data-action="clear" class="key-util">C</button>
+            <button type="button" data-action="backspace" class="key-util" aria-label="Hapus satu karakter">&#9003;</button>
+            <button type="button" data-insert="(" class="key-util">(</button>
+            <button type="button" data-insert=")" class="key-util">)</button>
+          </div>
+
+          <div class="angle-row" id="angleRow" hidden>
+            <span>Mode sudut</span>
+            <div class="segmented" role="group" aria-label="Mode sudut">
+              <button type="button" data-angle="rad" aria-pressed="true">RAD</button>
+              <button type="button" data-angle="deg" aria-pressed="false">DEG</button>
+            </div>
+          </div>
+
+          <button class="primary-btn" id="submitBtn" type="submit">
+            <span id="submitLabel">Turunkan</span>
+            <span class="key-cap" aria-hidden="true">&#9166;</span>
+          </button>
+
+          <p class="panel-note" id="panelNote">Turunan dan integral selalu dihitung dalam radian.</p>
+        </form>
+
+        <aside class="method-note" aria-label="Catatan metode">
+          <div class="method-note__head">
+            <span class="method-note__label">Catatan metode</span>
+            <span class="method-note__index" id="methodIndex">02</span>
+          </div>
+          <p id="methodText">Turunan simbolik mengikuti aturan baku. Bila bentuk tertutup tidak tersedia, nilai di titik dihitung dengan beda hingga tengah.</p>
+        </aside>
+      </section>
+
+      <article class="panel result-panel">
+          <header class="panel-head">
+            <span class="eyebrow" id="resultEyebrow">Turunan</span>
+            <span class="result-state" id="resultState">menunggu</span>
+          </header>
+
+          <div class="result-main" id="resultMain" aria-live="polite">&mdash;</div>
+          <div class="result-sub" id="resultSub">Masukkan ekspresi untuk mulai menghitung.</div>
+
+          <div class="error-banner" id="errorBanner" role="alert" hidden></div>
+        </article>
+
+        <article class="panel steps-panel">
+          <header class="panel-head">
+            <span class="eyebrow">Langkah</span>
+            <button class="text-btn" id="copySteps" type="button" disabled>Salin</button>
+          </header>
+          <ol class="steps" id="stepsList">
+            <li class="empty-step">Belum ada perhitungan.</li>
+          </ol>
+        </article>
+
+        <article class="panel graph-panel">
+          <header class="panel-head graph-head">
+            <div>
+              <span class="eyebrow">Bidang grafik</span>
+              <h2 id="graphTitle">f(x) = x^3 - 2x + 1</h2>
+            </div>
+            <div class="graph-tools">
+              <button class="icon-btn" id="zoomIn" type="button" aria-label="Perbesar grafik">+</button>
+              <button class="icon-btn" id="zoomOut" type="button" aria-label="Perkecil grafik">&minus;</button>
+              <button class="text-btn" id="resetView" type="button">Reset</button>
+            </div>
+          </header>
+
+          <div class="graph-wrap" id="graphWrap">
+            <canvas id="graph" role="img" aria-label="Grafik fungsi f(x) = x^3 - 2x + 1"></canvas>
+            <div class="graph-readout" id="graphReadout" hidden></div>
+            <div class="graph-hint" id="graphHint">Gulir untuk zoom &middot; tarik untuk menggeser</div>
+          </div>
+
+          <footer class="graph-legend">
+            <span><i class="swatch curve" aria-hidden="true"></i> f(x)</span>
+            <span id="legendArea" hidden><i class="swatch area" aria-hidden="true"></i> area integral</span>
+            <span id="legendTangent" hidden><i class="swatch tangent" aria-hidden="true"></i> garis singgung</span>
+          </footer>
+        </article>
+    </div>
+
+    <footer class="colophon">
+      <span>Kalkulus &middot; kalkulator ilmiah</span>
+      <span>Turunan simbolik: math.js &middot; Integral: Simpson&ndash;Richardson</span>
+    </footer>
+  </div>
+
+  <script src="js/vendor/math.min.js"></script>
+  <script src="js/math-engine.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
