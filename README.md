@@ -1,3 +1,5 @@
+link preview : https://yiercodee.github.io/kalkulator-integral-turunan/
+
 # Kalkulus — Kalkulator Ilmiah
 
 Kalkulator ilmiah berbasis web untuk menghitung ekspresi matematika, turunan, integral, dan menampilkan grafik fungsi. Seluruh perhitungan berjalan di sisi klien tanpa backend.
